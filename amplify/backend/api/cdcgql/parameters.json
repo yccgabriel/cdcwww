@@ -1,0 +1,6 @@
+{
+  "AppSyncApiName": "cdcgql",
+  "DynamoDBBillingMode": "PAY_PER_REQUEST",
+  "DynamoDBEnableServerSideEncryption": false,
+  "AuthModeLastUpdated": "2023-03-03T12:14:55.109Z"
+}

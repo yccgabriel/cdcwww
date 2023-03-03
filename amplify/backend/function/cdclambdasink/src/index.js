@@ -1,0 +1,121 @@
+/* Amplify Params - DO NOT EDIT
+	API_CDCGQL_GRAPHQLAPIENDPOINTOUTPUT
+	API_CDCGQL_GRAPHQLAPIIDOUTPUT
+	API_CDCGQL_GRAPHQLAPIKEYOUTPUT
+	ENV
+	REGION
+Amplify Params - DO NOT EDIT */
+
+import crypto from '@aws-crypto/sha256-js';
+import { defaultProvider } from '@aws-sdk/credential-provider-node';
+import { SignatureV4 } from '@aws-sdk/signature-v4';
+import { HttpRequest } from '@aws-sdk/protocol-http';
+import { default as fetch, Request } from 'node-fetch';
+
+const GRAPHQL_ENDPOINT = process.env.API_CDCGQL_GRAPHQLAPIENDPOINTOUTPUT;
+const AWS_REGION = process.env.AWS_REGION || 'ap-southeast-1';
+const { Sha256 } = crypto;
+
+const getProductQuery = /* GraphQL */ `
+  query GET_PRODUCT ($id: ID!) {
+    getProduct ( id: $id ) {
+      id
+      name
+    }
+  }
+`;
+const createProductMutation = /* GraphQL */ `
+  mutation CREATE_PRODUCT ($id: ID!, $name: String) {
+    createProduct (
+      input: { id: $id, name: $name }
+    ) {
+      id
+      name
+    }
+  }
+`;
+const updateProductMutation = /* GraphQL */ `
+  mutation UPDATE_PRODUCT ($id: ID!, $name: String) {
+    updateProduct (
+      input: { id: $id, name: $name }
+    ) {
+      id
+      name
+    }
+  }
+`;
+
+const dorequest = async (payload) => {
+    const endpoint = new URL(GRAPHQL_ENDPOINT);
+  
+    const signer = new SignatureV4({
+      credentials: defaultProvider(),
+      region: AWS_REGION,
+      service: 'appsync',
+      sha256: Sha256
+    });
+  
+    const requestToBeSigned = new HttpRequest({
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        host: endpoint.host
+      },
+      hostname: endpoint.host,
+      body: payload,
+      path: endpoint.pathname
+    });
+  
+    const signed = await signer.sign(requestToBeSigned);
+    const request = new Request(endpoint, signed);
+  
+    let statusCode = 200;
+    let body;
+    let response;
+  
+    response = await fetch(request);
+    body = await response.json();
+    
+    if ( body.errors ) {
+      console.error('errors', JSON.stringify(body));
+      throw new Error(body.errors);
+    }
+    
+    return { body, statusCode };
+  }
+
+/**
+ * @type {import('@types/aws-lambda').APIGatewayProxyHandler}
+ */
+export const handler = async (event) => {
+    console.log(`EVENT: ${JSON.stringify(event)}`);
+  
+    const target = {
+      id: event[0].payload.key.id,
+      name: JSON.parse(event[0].payload.value.after.name).en_US,
+    };
+  
+    const payload = JSON.stringify({
+      query: getProductQuery,
+      variables: { id: target.id },
+    });
+    const { body:querybody } = await dorequest(payload);
+  
+    if ( querybody.data.getProduct === null ) {
+      // product not exist. create product.
+      const payload = JSON.stringify({
+        query: createProductMutation,
+        variables: target,
+      });
+      const { body } = await dorequest(payload);
+      return 'created: ' + JSON.stringify(body);
+    } else {
+      // product exists. update product.
+      const payload = JSON.stringify({
+        query: updateProductMutation,
+        variables: target,
+      });
+      const { body } = await dorequest(payload);
+      return 'updated: ' + JSON.stringify(body);
+    }
+  };

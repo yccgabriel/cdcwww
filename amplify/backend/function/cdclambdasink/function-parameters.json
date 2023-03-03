@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "api": {
+      "cdcgql": [
+        "Query",
+        "Mutation"
+      ]
+    }
+  },
+  "lambdaLayers": []
+}

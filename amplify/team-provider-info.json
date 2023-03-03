@@ -10,6 +10,17 @@
       "StackName": "amplify-cdcwww-dev-123158",
       "StackId": "arn:aws:cloudformation:ap-southeast-1:578117550548:stack/amplify-cdcwww-dev-123158/579095d0-b97c-11ed-9b4e-0a147530daca",
       "AmplifyAppId": "d261ebiaeqeqa0"
+    },
+    "categories": {
+      "api": {
+        "cdcgql": {}
+      },
+      "function": {
+        "cdclambdasink": {
+          "deploymentBucketName": "amplify-cdcwww-dev-123158-deployment",
+          "s3Key": "amplify-builds/cdclambdasink-7968505a455753397330-build.zip"
+        }
+      }
     }
   }
 }
