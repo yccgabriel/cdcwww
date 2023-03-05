@@ -18,7 +18,7 @@
       "function": {
         "cdclambdasink": {
           "deploymentBucketName": "amplify-cdcwww-dev-123158-deployment",
-          "s3Key": "amplify-builds/cdclambdasink-7968505a455753397330-build.zip"
+          "s3Key": "amplify-builds/cdclambdasink-4f31586673787258766e-build.zip"
         }
       }
     }

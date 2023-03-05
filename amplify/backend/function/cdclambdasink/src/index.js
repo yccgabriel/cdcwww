@@ -21,6 +21,8 @@ const getProductQuery = /* GraphQL */ `
     getProduct ( id: $id ) {
       id
       name
+      createdAt
+      updatedAt
     }
   }
 `;
@@ -31,6 +33,8 @@ const createProductMutation = /* GraphQL */ `
     ) {
       id
       name
+      createdAt
+      updatedAt
     }
   }
 `;
@@ -41,6 +45,20 @@ const updateProductMutation = /* GraphQL */ `
     ) {
       id
       name
+      createdAt
+      updatedAt
+    }
+  }
+`;
+const deleteProductMutation = /* GraphQL */ `
+  mutation DELETE_PRODUCT ($id: ID!) {
+    deleteProduct (
+      input: { id: $id }
+    ) {
+      id
+      name
+      createdAt
+      updatedAt
     }
   }
 `;
@@ -89,33 +107,64 @@ const dorequest = async (payload) => {
  */
 export const handler = async (event) => {
     console.log(`EVENT: ${JSON.stringify(event)}`);
-  
-    const target = {
-      id: event[0].payload.key.id,
-      name: JSON.parse(event[0].payload.value.after.name).en_US,
-    };
+
+    if (
+      event[0].payload.value === null
+    ) {
+      // debezium firing two messages for delete item.  check kafka messages for details.
+      return 'ignore tombstone message';
+    }
+
+    const targetId = event[0].payload.key.id;
   
     const payload = JSON.stringify({
       query: getProductQuery,
-      variables: { id: target.id },
+      variables: { id: targetId },
     });
     const { body:querybody } = await dorequest(payload);
+
+    const haveProduct = querybody.data.getProduct !== null;
+
+    const isDelete = event[0].payload.value.after === null;
   
-    if ( querybody.data.getProduct === null ) {
+    if ( isDelete && haveProduct ) {
+
+      const payload = JSON.stringify({
+        query: deleteProductMutation,
+        variables: { id: targetId },
+      });
+      const { body } = await dorequest(payload);
+      return 'deleted: ' + JSON.stringify(body);
+
+    } else if ( isDelete && ! haveProduct ) {
+
+      const message = 'ignored delete id: ' + targetId;
+      console.log(message);
+      return message;
+
+    } else if ( ! isDelete && ! haveProduct ) {
+
       // product not exist. create product.
       const payload = JSON.stringify({
         query: createProductMutation,
-        variables: target,
+        variables: { id: targetId, name: JSON.parse(event[0].payload.value.after.name).en_US },
       });
       const { body } = await dorequest(payload);
       return 'created: ' + JSON.stringify(body);
-    } else {
+
+    } else if ( ! isDelete && haveProduct ) {
+
       // product exists. update product.
       const payload = JSON.stringify({
         query: updateProductMutation,
-        variables: target,
+        variables: { id: targetId, name: JSON.parse(event[0].payload.value.after.name).en_US },
       });
       const { body } = await dorequest(payload);
       return 'updated: ' + JSON.stringify(body);
+
+    } else {
+
+      throw new Error('should not reach here!');
+
     }
   };
