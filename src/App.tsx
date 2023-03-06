@@ -93,20 +93,24 @@ function App() {
       </header>
       <main>
         <table>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-          </tr>
-          {products.map((product, key) => (
-            <tr key={key}>
-              {/*
-              // @ts-ignore */}
-              <td>{product.id}</td>
-              {/*
-              // @ts-ignore */}
-              <td>{product.name}</td>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
             </tr>
-          ))}
+          </thead>
+          <tbody>
+            {products.map((product, key) => (
+              <tr key={key}>
+                {/*
+                // @ts-ignore */}
+                <td>{product.id}</td>
+                {/*
+                // @ts-ignore */}
+                <td>{product.name}</td>
+              </tr>
+            ))}
+          </tbody>
         </table>
       </main>
     </div>
